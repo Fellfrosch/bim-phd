@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>СИМ Матрица за оценка на готовността</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f4f0;
+    color: #1a1a18;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  .header {
+    border-bottom: 1px solid #d3d1c7;
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .header-label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #888780;
+    margin-bottom: 0.4rem;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 500;
+    color: #1a1a18;
+    margin-bottom: 0.3rem;
+  }
+  .header p {
+    font-size: 13px;
+    color: #5f5e5a;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: #fff;
+    border: 0.5px solid #d3d1c7;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .panel-title {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #888780;
+    margin-bottom: 1.25rem;
+  }
+
+  .criterion {
+    margin-bottom: 1.1rem;
+    padding-bottom: 1.1rem;
+    border-bottom: 0.5px solid #e8e7e2;
+  }
+  .criterion:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .crit-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0.5rem;
+  }
+
+  .crit-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #185fa5;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .crit-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a18;
+    flex: 1;
+  }
+
+  .crit-topic {
+    font-size: 10px;
+    color: #888780;
+    background: #f1efe8;
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 3px;
+  }
+  .slider-label {
+    font-size: 10px;
+    color: #b4b2a9;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: linear-gradient(to right, #185fa5 0%, #185fa5 var(--val-pct, 0%), #d3d1c7 var(--val-pct, 0%), #d3d1c7 100%);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #185fa5;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #185fa5;
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #185fa5;
+    border: 2px solid #fff;
+    cursor: pointer;
+  }
+
+  .score-badge {
+    min-width: 32px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: #185fa5;
+  }
+
+  .level-desc {
+    font-size: 11px;
+    color: #5f5e5a;
+    margin-top: 4px;
+    padding-left: 30px;
+    font-style: italic;
+    min-height: 16px;
+  }
+
+  .right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: sticky;
+    top: 1.5rem;
+  }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 340px;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .metric-card {
+    background: #f1efe8;
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    text-align: center;
+  }
+  .metric-label {
+    font-size: 11px;
+    color: #888780;
+    margin-bottom: 4px;
+  }
+  .metric-value {
+    font-size: 26px;
+    font-weight: 500;
+    color: #1a1a18;
+  }
+  .metric-sub {
+    font-size: 11px;
+    color: #888780;
+  }
+
+  .result-card {
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    border: 1.5px solid;
+    transition: all 0.3s;
+  }
+  .result-title {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .result-step {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  .result-desc {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .result-actions {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 0.5px solid;
+  }
+  .result-actions-title {
+    font-size: 11px;
+    font-weight: 500;
+    margin-bottom: 0.35rem;
+  }
+  .result-action-item {
+    font-size: 12px;
+    margin-bottom: 2px;
+    padding-left: 12px;
+    position: relative;
+  }
+  .result-action-item::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    opacity: 0.5;
+  }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #5f5e5a;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  .footer-note {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 0.5px solid #d3d1c7;
+    font-size: 11px;
+    color: #888780;
+    line-height: 1.6;
+  }
+
+  .levels-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    margin-top: 0.75rem;
+  }
+  .levels-table th {
+    background: #f1efe8;
+    padding: 5px 8px;
+    text-align: left;
+    font-weight: 500;
+    color: #5f5e5a;
+    border-bottom: 1px solid #d3d1c7;
+  }
+  .levels-table td {
+    padding: 5px 8px;
+    border-bottom: 0.5px solid #e8e7e2;
+    vertical-align: top;
+    color: #2c2c2a;
+  }
+  .levels-table tr:last-child td { border-bottom: none; }
+
+  .level-pill {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  @media print {
+    body { background: #fff; }
+    .layout { grid-template-columns: 1fr; }
+    .right-col { position: static; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="header-label">Приложение към т. 4.3 — Петстъпков модел за внедряване на СИМ</div>
+    <h1>Матрица за оценка на СИМ готовността на организацията</h1>
+    <p>Адаптирана по BIM Competency Framework (Scottish Futures Trust / CITB, 2018) и БДС EN ISO 19650 за контекста на българската проектантска практика. Оценете всеки критерий по скала 1–5 и получете автоматична препоръка за стартова стъпка.</p>
+  </div>
+
+  <div class="layout">
+
+    <div>
+      <div class="panel">
+        <div class="panel-title">Критерии за оценка — преместете плъзгача</div>
+        <div id="criteria-container"></div>
+      </div>
+
+      <div class="panel" style="margin-top: 1.5rem;">
+        <div class="panel-title">Описание на нивата по скала 1–5</div>
+        <table class="levels-table">
+          <thead>
+            <tr>
+              <th style="width: 48px;">Ниво</th>
+              <th style="width: 90px;">Наименование</th>
+              <th>Характеристика</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="level-pill" style="background:#fcebeb;color:#a32d2d;">1</span></td>
+              <td style="font-weight:500;">Начален</td>
+              <td>Липсват формализирани практики. Процесите са хаотични или изцяло традиционни. Не е налице съзнателна готовност за СИМ.</td>
+            </tr>
+            <tr>
+              <td><span class="level-pill" style="background:#faeeda;color:#854f0b;">2</span></td>
+              <td style="font-weight:500;">Базов</td>
+              <td>Налице са отделни елементи или осъзнатост, но без системност. Подходите са нестандартизирани, разпокъсани или зависят от отделни лица.</td>
+            </tr>
+            <tr>
+              <td><span class="level-pill" style="background:#eaf3de;color:#3b6d11;">3</span></td>
+              <td style="font-weight:500;">Развиващ се</td>
+              <td>Формират се структурирани подходи. Налице е пилотен опит или частично прилагане. Има воля за промяна и идентифицирани отговорни лица.</td>
+            </tr>
+            <tr>
+              <td><span class="level-pill" style="background:#e6f1fb;color:#185fa5;">4</span></td>
+              <td style="font-weight:500;">Зрял</td>
+              <td>Процесите са формализирани и последователно прилагани. Стандартите са документирани. Екипът работи ефективно с инструментите.</td>
+            </tr>
+            <tr>
+              <td><span class="level-pill" style="background:#eeedfe;color:#534ab7;">5</span></td>
+              <td style="font-weight:500;">Водещ</td>
+              <td>Пълна интеграция и непрекъснато подобрение. Организацията е референтен пример. Активно участва в стандартизация и браншово развитие.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="right-col">
+
+      <div class="panel">
+        <div class="panel-title">Профил на готовността</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#185fa5;"></div>Текущо ниво</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#d3d1c7;border: 1px dashed #888;"></div>Минимален праг (3)</div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="radarChart" role="img" aria-label="Радарна диаграма на СИМ готовността по 10 критерия">Диаграма на готовността.</canvas>
+        </div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Общ резултат</div>
+          <div class="metric-value" id="total-score">10</div>
+          <div class="metric-sub">от 50 точки</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Средна оценка</div>
+          <div class="metric-value" id="avg-score">1.0</div>
+          <div class="metric-sub">от 5.0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Критерии ≥ 3</div>
+          <div class="metric-value" id="above-threshold">0</div>
+          <div class="metric-sub">от 10 критерия</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Процент готовност</div>
+          <div class="metric-value" id="pct-score">20%</div>
+          <div class="metric-sub">спрямо максимума</div>
+        </div>
+      </div>
+
+      <div class="result-card" id="result-card">
+        <div class="result-title">Препоръчителна стартова точка</div>
+        <div class="result-step" id="result-step">—</div>
+        <div class="result-desc" id="result-desc">—</div>
+        <div class="result-actions" id="result-actions">
+          <div class="result-actions-title">Приоритетни действия:</div>
+          <div id="result-action-list"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer-note">
+    <strong>Източници и методологична бележка:</strong> Матрицата е разработена въз основа на BIM Competency Framework (Scottish Futures Trust / CITB, 2018), Succar, B. (2009) BIM maturity model, и БДС EN ISO 19650-1:2019. Критериите са адаптирани към специфичните условия на проектантската практика в България, отчитайки нормативната рамка по ЗУТ и Наредба №4. Оценяването е предназначено за самодиагностика на проектантски организации преди преминаване към Стъпка 1 от предложения петстъпков модел (вж. т. 4.3 от настоящата разработка).
+    <br><br>
+    <strong>Препоръка за употреба:</strong> Оценката следва да се извърши от мениджмънта в съвместна работна сесия с потенциалните членове на СИМ ядрото. Резултатите са отправна точка за диагностичния доклад (Стъпка 1) и не представляват окончателна атестация.
+  </div>
+
+</div>
+
+<script>
+const criteria = [
+  {
+    id: 'tech',
+    name: 'Технологична инфраструктура',
+    topic: 'Инструменти и технологии',
+    levels: [
+      'Само CAD (2D). Без СИМ лицензи. IT инфраструктурата е ограничена.',
+      'Налице са единични СИМ лицензи или пробни версии. Хардуерът е частично достатъчен.',
+      'СИМ лицензи за основни дисциплини. Достатъчен хардуер за пилот. Базова IT среда.',
+      'Пълен лицензен набор. Координационни инструменти (Navisworks/Solibri). Облачна инфраструктура.',
+      'Оптимизиран технологичен стек. CDE платформа. Интеграция между инструменти. Автоматизация.'
+    ]
+  },
+  {
+    id: 'competency',
+    name: 'СИМ компетентности на екипа',
+    topic: 'Знания, умения, поведения',
+    levels: [
+      'Екипът работи само с 2D CAD. Без познания за СИМ методология или ISO 19650.',
+      'Отделни членове имат базово СИМ познание. Без систематично обучение.',
+      'Ядро от 2–4 специалисти с реален СИМ опит. Разбиране на BEP, LOD, CDE концепции.',
+      'Повечето от екипа работят уверено с СИМ. Налице е BIM координатор с опит.',
+      'Специализирани роли (BIM Manager, Info Manager). Сертифицирани специалисти. Обучителен капацитет.'
+    ]
+  },
+  {
+    id: 'standards',
+    name: 'Вътрешни стандарти и процедури',
+    topic: 'Методи и стандарти',
+    levels: [
+      'Без документирани стандарти. Всеки работи по свой начин.',
+      'Неформални устни правила. Частични шаблони за чертежи. Без именуване.',
+      'Базови правила за именуване. Шаблони за чертежи. Стартиращ наръчник.',
+      'Документирани стандарти за именуване, LOD матрица, шаблони за Revit/ArchiCAD.',
+      'Пълен СИМ наръчник. Ролеви ръководства. Автоматизирани проверки за съответствие.'
+    ]
+  },
+  {
+    id: 'resources',
+    name: 'Ресурси — бюджет и кадри',
+    topic: 'Стойност и инвестиция',
+    levels: [
+      'Без бюджет и без свободен капацитет за СИМ. Всеки специалист е 100% натоварен.',
+      'Ограничен бюджет за обучение. Частичен капацитет при конкретни специалисти.',
+      'Предвиден бюджет за пилот. 1–2 специалисти с частично отделено време за СИМ.',
+      'Ясен бюджет за обучение и инструменти. СИМ ядрото има достатъчно работно време.',
+      'Стратегическа инвестиция в СИМ. Отделен бюджетен ред. Специализирани позиции в щата.'
+    ]
+  },
+  {
+    id: 'motivation',
+    name: 'Мотивация и организационна култура',
+    topic: 'Хора и технологии',
+    levels: [
+      'Ръководството не вижда нужда от СИМ. Съпротива или безразличие.',
+      'Интерес от отделни специалисти, без подкрепа от ръководството.',
+      'Ръководството подкрепя концепцията. Съществуват вътрешни СИМ „шампиони".',
+      'Активна подкрепа от ръководството. СИМ е стратегически приоритет. Екипът е мотивиран.',
+      'СИМ е вградено в корпоративната идентичност. Организационна култура на непрекъснато подобрение.'
+    ]
+  },
+  {
+    id: 'processes',
+    name: 'Процеси и работни потоци',
+    topic: 'Координация и процеси',
+    levels: [
+      'Координацията е изцяло неформална — имейли, телефони, ръчни проверки.',
+      'Периодични срещи и обмен на PDF. Без структуриран контрол на версии.',
+      'Дефиниран координационен ритъм. Опит с clash detection. Структурирани папки.',
+      'BEP документиран. TIDP/MIDP прилагани. BCF комуникация. CDE работни потоци.',
+      'Автоматизирани проверки. Пълен цикъл WIP→Shared→Published. Одитируема проследимост.'
+    ]
+  },
+  {
+    id: 'data',
+    name: 'Управление на данни и CDE',
+    topic: 'Данни и сътрудничество',
+    levels: [
+      'Данните се съхраняват локално на компютри. Без правила за архивиране или версии.',
+      'Споделен сървър или облачна папка. Без стандарти за именуване или достъп.',
+      'Структурирана папкова система с правила. Базов контрол на версии. Ограничен достъп.',
+      'CDE платформа функционира. 4 статуса (WIP/Shared/Published/Archived). Права на достъп.',
+      'Интегрирана CDE с автоматични известия, одитен трейл, IFC обмен и BCF интеграция.'
+    ]
+  },
+  {
+    id: 'regulatory',
+    name: 'Нормативна осведоменост',
+    topic: 'Стандарти и наредби',
+    levels: [
+      'Без познания за ISO 19650 или СИМ стандарти. Работа само по ЗУТ и Наредба №4.',
+      'Осведоменост за БДС EN ISO 19650, но без практическо приложение.',
+      'Разбиране на EIR, BEP, LOD/LOI в контекста на ISO 19650 и националните ограничения.',
+      'Активно прилагане на ISO 19650. Ясен анализ на нормативните ограничения по ЗУТ.',
+      'Участие в браншови работни групи. Принос към национална стандартизация. КАБ интеграция.'
+    ]
+  },
+  {
+    id: 'collaboration',
+    name: 'Координация и съвместна работа',
+    topic: 'Сътрудничество',
+    levels: [
+      'Дисциплините работят изолирано. Координацията е случайна и закъсняла.',
+      'Периодична координация при проблеми. Без структуриран процес или документиране.',
+      'Редовни координационни срещи. Начален clash detection. Документирани проблеми.',
+      'Систематичен BCF процес. Ритъм на публикации. Нормативни проверки интегрирани.',
+      'Непрекъсната координация в реално време. Мултидисциплинарен модел. Zero-clash цел.'
+    ]
+  },
+  {
+    id: 'roles',
+    name: 'Роли и отговорности',
+    topic: 'Роли и отговорности',
+    levels: [
+      'Без дефинирани СИМ роли. Отговорностите са размити.',
+      'Неформален „СИМ ентусиаст" без официален мандат. Без матрица на отговорности.',
+      'Идентифицирани потенциални членове на СИМ ядро. Базово разписване на ролите.',
+      'Формализирани роли: BIM координатор, информационен мениджър, дисциплинарни отговорници.',
+      'Пълна ролева структура по ISO 19650. СИМ ядрото е институционализирано звено.'
+    ]
+  }
+];
+
+const values = new Array(criteria.length).fill(1);
+
+const levelColors = ['#e24b4a','#ba7517','#639922','#185fa5','#534ab7'];
+const levelNames = ['Начален','Базов','Развиващ се','Зрял','Водещ'];
+
+const stepResults = [
+  {
+    range: [10, 18],
+    step: 'Стъпка 1 — интензивна подготовка',
+    color: '#fcebeb', borderColor: '#e24b4a', textColor: '#a32d2d',
+    desc: 'Организацията е в начален стадий. Необходима е обстойна диагностика, целенасочено обучение и изграждане на технологична база преди каквото и да е пилотно внедряване.',
+    actions: [
+      'Провеждане на детайлна диагностика с конкретни измерими резултати',
+      'Обучение на поне 2–3 специалисти в основите на ISO 19650 и СИМ методологията',
+      'Оценка и планиране на технологичните инвестиции (лицензи, хардуер)',
+      'Идентифициране на потенциалните членове на СИМ ядрото',
+      'Разработване на реалистичен 12-месечен план за готовност'
+    ]
+  },
+  {
+    range: [19, 27],
+    step: 'Стъпка 1–2 — изграждане на рамка',
+    color: '#faeeda', borderColor: '#ba7517', textColor: '#854f0b',
+    desc: 'Налице са отправни точки, но значителни пропуски изискват запълване преди пилот. Фокусът е върху формализиране на стратегически цели и изграждане на СИМ рамката.',
+    actions: [
+      'Формулиране на стратегически СИМ цели — краткосрочни и средносрочни',
+      'Официализиране на СИМ ядрото и разписване на ролите',
+      'Избор на технологичен стек и CDE подход',
+      'Разработване на базови стандарти за именуване и структура на файлове',
+      'Планиране на пилотен проект — критерии и срок за избор'
+    ]
+  },
+  {
+    range: [28, 36],
+    step: 'Стъпка 2–3 — готовност за пилот',
+    color: '#eaf3de', borderColor: '#639922', textColor: '#3b6d11',
+    desc: 'Организацията е в добра позиция за пилотно внедряване. Стратегическата рамка може да бъде финализирана и пилотен проект да стартира в рамките на 3–6 месеца.',
+    actions: [
+      'Финализиране на СИМ стратегическата рамка и BEP шаблон',
+      'Избор на конкретен пилотен проект по дефинираните критерии',
+      'Въвеждане на CDE — дори в опростена конфигурация',
+      'Разработване на дисциплинарни шаблони за основния СИМ инструмент',
+      'Дефиниране на измерими показатели за оценка на пилота'
+    ]
+  },
+  {
+    range: [37, 44],
+    step: 'Стъпка 3–4 — формализация и мащабиране',
+    color: '#e6f1fb', borderColor: '#185fa5', textColor: '#0c447c',
+    desc: 'Организацията разполага с добра СИМ база. Натрупаният опит позволява преминаване към пълна стандартизация и разширяване на СИМ практиките върху повече проекти.',
+    actions: [
+      'Разработване на пълния документационен пакет от стандарти',
+      'Провеждане на структурирани „lessons learned" анализи от пилота',
+      'Изграждане на обучителна рамка за целия екип',
+      'Интегриране на КАБ Графичния стандарт в СИМ шаблоните',
+      'Въвеждане на система от КПИ за мониторинг на ефективността'
+    ]
+  },
+  {
+    range: [45, 50],
+    step: 'Стъпка 4–5 — оптимизация и лидерство',
+    color: '#eeedfe', borderColor: '#534ab7', textColor: '#3c3489',
+    desc: 'Организацията е на водещо ниво. СИМ е интегриран в стандартната практика. Акцентът е върху непрекъснато подобрение, мащабиране и надграждане към Digital Twin.',
+    actions: [
+      'Разработване на показатели за ROI от СИМ внедряването',
+      'Проучване на Asset Information Model и Digital Twin перспективи',
+      'Участие в браншови инициативи и стандартизационни процеси',
+      'Менторство на по-малки фирми и браншово лидерство',
+      'Подготовка за нормативните изисквания по Стратегия 2030'
+    ]
+  }
+];
+
+function buildCriteria() {
+  const container = document.getElementById('criteria-container');
+  criteria.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'criterion';
+    div.innerHTML = `
+      <div class="crit-header">
+        <div class="crit-num">${i + 1}</div>
+        <div class="crit-name">${c.name}</div>
+        <div class="crit-topic">${c.topic}</div>
+      </div>
+      <div class="slider-labels">
+        <span class="slider-label">1 — Начален</span>
+        <span class="slider-label">3 — Развиващ се</span>
+        <span class="slider-label">5 — Водещ</span>
+      </div>
+      <div class="slider-row">
+        <input type="range" min="1" max="5" step="1" value="1" id="slider-${i}" style="--val-pct: 0%;">
+        <div class="score-badge" id="badge-${i}">1</div>
+      </div>
+      <div class="level-desc" id="desc-${i}">${c.levels[0]}</div>
+    `;
+    container.appendChild(div);
+
+    const slider = div.querySelector(`#slider-${i}`);
+    slider.addEventListener('input', () => {
+      const v = parseInt(slider.value);
+      values[i] = v;
+      const pct = ((v - 1) / 4 * 100).toFixed(0) + '%';
+      slider.style.setProperty('--val-pct', pct);
+      document.getElementById(`badge-${i}`).textContent = v;
+      document.getElementById(`badge-${i}`).style.color = levelColors[v - 1];
+      document.getElementById(`desc-${i}`).textContent = c.levels[v - 1];
+      updateAll();
+    });
+  });
+}
+
+let radarChart;
+
+function buildChart() {
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  const labels = criteria.map(c => c.name.length > 22 ? c.name.substring(0, 20) + '…' : c.name);
+  radarChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Текущо ниво',
+          data: new Array(criteria.length).fill(1),
+          backgroundColor: 'rgba(24, 95, 165, 0.12)',
+          borderColor: '#185fa5',
+          borderWidth: 2,
+          pointBackgroundColor: '#185fa5',
+          pointRadius: 4,
+          pointHoverRadius: 6
+        },
+        {
+          label: 'Минимален праг (3)',
+          data: new Array(criteria.length).fill(3),
+          backgroundColor: 'rgba(0,0,0,0)',
+          borderColor: '#b4b2a9',
+          borderWidth: 1,
+          borderDash: [4, 4],
+          pointRadius: 0,
+          pointHoverRadius: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            if (ctx.datasetIndex === 0) {
+              const v = ctx.parsed.r;
+              return ` ${levelNames[v-1]} (${v}/5)`;
+            }
+            return null;
+          }
+        }
+      }},
+      scales: {
+        r: {
+          min: 0,
+          max: 5,
+          ticks: {
+            stepSize: 1,
+            font: { size: 10 },
+            color: '#888780',
+            backdropColor: 'transparent',
+            callback: (v) => v === 0 ? '' : v
+          },
+          grid: { color: 'rgba(0,0,0,0.08)' },
+          angleLines: { color: 'rgba(0,0,0,0.08)' },
+          pointLabels: {
+            font: { size: 10.5 },
+            color: '#5f5e5a'
+          }
+        }
+      }
+    }
+  });
+}
+
+function updateAll() {
+  radarChart.data.datasets[0].data = [...values];
+  radarChart.update();
+
+  const total = values.reduce((a, b) => a + b, 0);
+  const avg = total / values.length;
+  const aboveThreshold = values.filter(v => v >= 3).length;
+  const pct = Math.round(total / 50 * 100);
+
+  document.getElementById('total-score').textContent = total;
+  document.getElementById('avg-score').textContent = avg.toFixed(1);
+  document.getElementById('above-threshold').textContent = aboveThreshold;
+  document.getElementById('pct-score').textContent = pct + '%';
+
+  const result = stepResults.find(r => total >= r.range[0] && total <= r.range[1]) || stepResults[stepResults.length - 1];
+  const card = document.getElementById('result-card');
+  card.style.background = result.color;
+  card.style.borderColor = result.borderColor;
+  card.querySelector('.result-title').style.color = result.textColor;
+  card.querySelector('.result-step').style.color = result.textColor;
+  card.querySelector('.result-step').textContent = result.step;
+  card.querySelector('.result-desc').style.color = result.textColor;
+  card.querySelector('.result-desc').textContent = result.desc;
+  card.querySelector('.result-actions').style.borderTopColor = result.borderColor + '44';
+  card.querySelector('.result-actions-title').style.color = result.textColor;
+
+  const actionList = document.getElementById('result-action-list');
+  actionList.innerHTML = result.actions.map(a =>
+    `<div class="result-action-item" style="color:${result.textColor};">${a}</div>`
+  ).join('');
+}
+
+buildCriteria();
+buildChart();
+updateAll();
+</script>
+</body>
+</html>
